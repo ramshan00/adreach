@@ -65,7 +65,7 @@
   margin: 19px 0 0;
   padding: 0;
   border: 0;
-  display: block;
+  display: inline-block;
   position: relative;
 }
 .reference-card .card-title h2 {
@@ -91,14 +91,14 @@
 }
 .reference-card .card-title > strong {
   position: absolute;
-  right: 42px;
-  bottom: 114px;
+  right: 0;
+  bottom: 95px;
   color: #3F72D8;
   background: linear-gradient(135deg, #4F8EE8 0%, #3F72D8 50%, #2E4FA4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-family: var(--font-montserrat), Arial, sans-serif;
-  font-size: 39px;
+  font-size: 44px;
   line-height: 1;
   font-weight: 800;
 }
