@@ -50,7 +50,7 @@ test("valid details enable registration while export stays locked before persist
   await page.getByLabel(/I consent/).check();
   const submit = page.getByRole("button", { name: /Register & Generate Image/i });
   await expect(submit).toBeEnabled({ timeout: 10_000 });
-  await expect(page.getByRole("button", { name: /Download LinkedIn Image/i })).toBeDisabled();
+  await expect(page.getByRole("button", { name: /Download Image/i })).toBeDisabled();
 });
 
 test("invalid photo is explained and crop cancel preserves form data", async ({ page }) => {

@@ -1,6 +1,6 @@
 # Adreach TikTok Seminar 2026
 
-Production-ready event registration landing page and personalized 1080×1080 LinkedIn image generator built with Next.js, Neon PostgreSQL, Drizzle ORM, and browser-only photo cropping.
+Production-ready event registration landing page and personalized 1080×1080  image generator built with Next.js, Neon PostgreSQL, Drizzle ORM, and browser-only photo cropping.
 
 ## Local setup
 
