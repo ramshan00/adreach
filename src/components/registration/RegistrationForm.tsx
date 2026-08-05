@@ -38,6 +38,6 @@ export function RegistrationForm() {
         <button className="button button-primary submit-button" disabled={submitting || !isValid || !photo} type="submit">{submitting ? <LoaderCircle className="spin" /> : <LockKeyhole />}{submitting ? "Registering…" : "Register & Generate Image"}</button>
       </form><div id="registration-status" tabIndex={-1} aria-live="polite">{message && (saved ? <RegistrationSuccess message={message} /> : <div className="notice-error" role="alert">{message}</div>)}</div>
     </div>
-    <div className="preview-column"><div className="preview-heading"><div><span>LIVE PREVIEW</span><h2>Your LinkedIn image</h2></div><b>1080 × 1080</b></div><EventCardPreview cardRef={cardRef} fullName={fullName} designation={designation} photo={photo} /><DownloadCardButton cardRef={cardRef} fullName={fullName} enabled={saved && !!photo && fullName.trim().length >= 2} /></div>
+    <div className="preview-column"><EventCardPreview cardRef={cardRef} fullName={fullName} designation={designation} photo={photo} /><DownloadCardButton cardRef={cardRef} fullName={fullName} enabled={saved && !!photo && fullName.trim().length >= 2} /></div>
   </div>;
 }
