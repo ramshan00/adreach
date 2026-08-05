@@ -211,14 +211,14 @@ footer{width:min(1120px,calc(100% - 40px));min-height:130px}
 .generator-page .form-card{padding:30px;border-radius:24px;background:rgba(6,13,27,.94)}
 .generator-page .form-card h2{margin:0 0 8px;font-size:24px;font-weight:700;line-height:1.1;text-transform:none}
 .generator-page .form-intro{margin:0 0 24px}
-.generator-page .preview-column{position:static;max-width:620px}
+.generator-page .preview-column{position:sticky;top:20px;max-width:620px}
 .generator-page .preview-heading{min-height:44px;margin-bottom:10px;align-items:center}
 .generator-page .preview-heading span{padding:6px 10px}
 .generator-page .preview-heading h2{margin:4px 0 0;font-size:19px;text-transform:none}
 .generator-page .preview-stage{border-radius:16px}
 .generator-footer{margin-top:28px;padding-top:20px;border-top:1px solid rgba(20,114,202,.55);display:flex;justify-content:space-between;gap:20px;color:#899ab4;font-size:12px}
 .generator-footer span:first-child{color:#d9e4f3;font-weight:600}
-@media(max-width:900px){.generator-page{padding-top:30px}.generator-intro{margin-bottom:28px}.generator-page .registration-grid{grid-template-columns:1fr;max-width:650px;margin-inline:auto}.generator-page .preview-column{max-width:650px}.generator-footer{max-width:650px;margin-inline:auto}}
+@media(max-width:900px){.generator-page{padding-top:30px}.generator-intro{margin-bottom:28px}.generator-page .registration-grid{grid-template-columns:1fr;max-width:650px;margin-inline:auto}.generator-page .preview-column{position:static;max-width:650px}.generator-footer{max-width:650px;margin-inline:auto}}
 @media(max-width:560px){.generator-page{padding:22px 14px}.generator-intro .brand-logo{margin-bottom:18px}.generator-kicker{font-size:10px;letter-spacing:1.4px}.generator-intro h1{font-size:35px;letter-spacing:-1.4px}.generator-lead{margin-top:13px;font-size:16px}.generator-description{font-size:14px}.generator-instruction{font-size:13px}.generator-page .form-card{padding:22px 17px;border-radius:20px}.generator-footer{flex-direction:column;gap:6px}}
 
 /* Adreach website-aligned light application shell */
@@ -257,6 +257,11 @@ footer{width:min(1120px,calc(100% - 40px));min-height:130px}
 .generator-intro h1 .generator-title-lock em{color:#047aef;font-style:normal}
 @media(max-width:560px){.generator-intro h1{font-size:33px}.generator-title-lock{font-size:.94em}}
 @media(max-width:560px){.generator-intro .brand-logo{width:165px;min-width:165px;height:40px}.generator-intro .brand-logo__fallback{font-size:27px}}
+
+/* Supplied square Adreach artwork (icon, wordmark, and tagline). */
+.brand-logo__image{width:100%;height:100%;object-fit:contain}
+.generator-intro .brand-logo{width:190px;min-width:190px;height:190px;margin-top:-24px;margin-bottom:-24px}
+@media(max-width:560px){.generator-intro .brand-logo{width:160px;min-width:160px;height:160px;margin-top:-20px;margin-bottom:8px}}
 
 /* Keep the 1080px artwork visually identical when its preview is scaled down.
    Three logical pixels remain a crisp device pixel on narrow screens. */
