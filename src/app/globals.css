@@ -132,7 +132,7 @@
   background: rgba(26, 30, 52, 0.7);
   box-shadow: 0 4px 30px rgba(78, 86, 214, 0.25);
   overflow: hidden;
-  backdrop-filter: blur(12px);
+  /* backdrop-filter: blur(12px); */
 }
 .reference-card .portrait-frame img {
   width: 100%;
@@ -208,7 +208,7 @@
   border: 3px solid rgba(76, 132, 255, 0.45);
   border-radius: 51px;
   background: rgba(26, 30, 52, 0.7);
-  backdrop-filter: blur(12px);
+  /* backdrop-filter: blur(12px); */
   box-shadow: 0 8px 32px rgba(78, 86, 214, 0.2);
   display: grid;
   grid-template-columns: 313px 293px 1fr;

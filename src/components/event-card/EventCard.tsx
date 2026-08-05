@@ -5,8 +5,11 @@ type Props = { fullName: string; designation?: string; photo?: string };
 
 export const EventCard = forwardRef<HTMLDivElement, Props>(function EventCard({ fullName, designation, photo }, ref) {
   const displayName = fullName.trim() ? fullName.trim().toUpperCase() : "FULL NAME";
-  const displayDesignation = designation?.trim() ? designation.trim().toUpperCase() : "DESIGNATION";
-
+const displayDesignation = designation?.trim() ? (
+  <div className="attendee-field attendee-designation-field">
+    <p>{designation.trim().toUpperCase()}</p>
+  </div>
+) : null;
   return (
     <div ref={ref} className="event-card reference-card" data-export-card>
       <div className="reference-card__texture" />
@@ -34,9 +37,9 @@ export const EventCard = forwardRef<HTMLDivElement, Props>(function EventCard({ 
             <div className="attendee-field attendee-name-field">
               <h3 style={{ fontSize: nameFontSize(displayName) }}>{displayName}</h3>
             </div>
-            <div className="attendee-field attendee-designation-field">
-              <p>{displayDesignation}</p>
-            </div>
+            
+               {displayDesignation}
+            
           </div>
         </section>
         <section className="card-details">
