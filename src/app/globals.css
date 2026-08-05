@@ -216,10 +216,10 @@ footer{width:min(1120px,calc(100% - 40px));min-height:130px}
 .generator-page .preview-heading span{padding:6px 10px}
 .generator-page .preview-heading h2{margin:4px 0 0;font-size:19px;text-transform:none}
 .generator-page .preview-stage{border-radius:16px}
-.generator-footer{margin-top:28px;padding-top:20px;border-top:1px solid rgba(20,114,202,.55);display:flex;justify-content:space-between;gap:20px;color:#899ab4;font-size:12px}
+.generator-footer{width:100%;min-height:0;margin:20px 0 0;padding:16px 0 0;border-top:1px solid rgba(20,114,202,.55);display:flex;align-items:center;justify-content:space-between;gap:20px;color:#899ab4;font-size:12px}
 .generator-footer span:first-child{color:#d9e4f3;font-weight:600}
-@media(max-width:900px){.generator-page{padding-top:30px}.generator-intro{margin-bottom:28px}.generator-page .registration-grid{grid-template-columns:1fr;max-width:650px;margin-inline:auto}.generator-page .preview-column{position:static;max-width:650px}.generator-footer{max-width:650px;margin-inline:auto}}
-@media(max-width:560px){.generator-page{padding:22px 14px}.generator-intro .brand-logo{margin-bottom:18px}.generator-kicker{font-size:10px;letter-spacing:1.4px}.generator-intro h1{font-size:35px;letter-spacing:-1.4px}.generator-lead{margin-top:13px;font-size:16px}.generator-description{font-size:14px}.generator-instruction{font-size:13px}.generator-page .form-card{padding:22px 17px;border-radius:20px}.generator-footer{flex-direction:column;gap:6px}}
+@media(max-width:860px){.generator-page{padding-top:30px}.generator-intro{margin-bottom:28px}.generator-page .registration-grid{grid-template-columns:1fr;max-width:650px;margin-inline:auto}.generator-page .preview-column{position:static;max-width:650px}.generator-footer{max-width:650px;margin-inline:auto}}
+@media(max-width:560px){.generator-page{padding:22px 14px}.generator-intro .brand-logo{margin-bottom:18px}.generator-kicker{font-size:10px;letter-spacing:1.4px}.generator-intro h1{font-size:35px;letter-spacing:-1.4px}.generator-lead{margin-top:13px;font-size:16px}.generator-description{font-size:14px}.generator-instruction{font-size:13px}.generator-page .form-card{padding:22px 17px;border-radius:20px}.generator-footer{padding-top:14px;align-items:flex-start;flex-direction:column;gap:4px}}
 
 /* Adreach website-aligned light application shell */
 .generator-page{color:#0a1933;background:radial-gradient(circle at 88% 8%,rgba(4,122,239,.1),transparent 28%),linear-gradient(180deg,#fff 0%,#f5f8fc 100%)}
@@ -260,8 +260,13 @@ footer{width:min(1120px,calc(100% - 40px));min-height:130px}
 
 /* Supplied square Adreach artwork (icon, wordmark, and tagline). */
 .brand-logo__image{width:100%;height:100%;object-fit:contain}
-.generator-intro .brand-logo{width:190px;min-width:190px;height:190px;margin-top:-24px;margin-bottom:-24px}
-@media(max-width:560px){.generator-intro .brand-logo{width:160px;min-width:160px;height:160px;margin-top:-20px;margin-bottom:8px}}
+.generator-intro .brand-logo{display:block;width:clamp(180px,18vw,230px);min-width:0;height:auto;aspect-ratio:809/576;overflow:visible;margin:0 0 clamp(14px,1.5vw,22px)}
+.generator-intro .brand-logo__image{inset:0 auto auto 0;width:100%;height:auto;max-width:none;object-fit:initial}
+@media(max-width:560px){.generator-intro .brand-logo{width:clamp(150px,44vw,180px);height:auto;aspect-ratio:809/576;margin:0 auto 14px}}
+@media(max-width:560px){.generator-intro h1{font-size:clamp(21px,7vw,40px);line-height:1.1;letter-spacing:-1.1px;white-space:nowrap}.generator-intro h1 .generator-title-lock{font-size:1em}}
+@media(min-width:561px) and (max-width:1100px){.generator-intro h1{font-size:clamp(38px,6vw,48px);letter-spacing:-1.6px}}
+@media(min-width:861px) and (max-width:1100px){.generator-page .registration-grid{width:100%;max-width:none;grid-template-columns:minmax(360px,.72fr) minmax(0,1fr);gap:24px}.generator-page .preview-column{position:sticky;top:20px;width:100%;max-width:none}.generator-footer{width:100%;max-width:none}}
+@media(max-width:360px){.generator-page .field-title{align-items:flex-start;flex-wrap:wrap;gap:2px 8px}.generator-page .field-title>span{margin-bottom:0}.generator-page .field-title small{width:100%;font-size:10px}}
 
 /* Keep the 1080px artwork visually identical when its preview is scaled down.
    Three logical pixels remain a crisp device pixel on narrow screens. */
