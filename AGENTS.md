@@ -1,5 +1,5 @@
 <!-- BEGIN:nextjs-agent-rules -->
-notworking
+
 
 # This is NOT the Next.js you know
 
