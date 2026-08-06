@@ -10,7 +10,7 @@
 /* Reference-matched 1080 × 1080 attendee artwork */
 .reference-card {
   padding: 0;
-  background: url("/bg.jpeg") center / cover no-repeat;
+  background: url("/seminar/bg.jpeg") center / cover no-repeat;
   color: #F8FAFF;
   isolation: isolate;
 }

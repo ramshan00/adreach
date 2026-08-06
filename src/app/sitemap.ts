@@ -1,3 +1,16 @@
 import type { MetadataRoute } from "next";
-import { SITE_URL } from "@/lib/constants";
-export default function sitemap(): MetadataRoute.Sitemap { return [{ url: SITE_URL, lastModified: new Date("2026-08-01"), changeFrequency: "weekly", priority: 1 }]; }
+
+export const dynamic = "force-static";
+
+export default function sitemap(): MetadataRoute.Sitemap {
+  const baseUrl = "https://adreach.agency/seminar";
+
+  return [
+    {
+      url: `${baseUrl}/`,
+      lastModified: "2026-08-06",
+      changeFrequency: "monthly",
+      priority: 1,
+    },
+  ];
+}
