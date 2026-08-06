@@ -10,33 +10,9 @@
 /* Reference-matched 1080 × 1080 attendee artwork */
 .reference-card {
   padding: 0;
-  background: linear-gradient(145deg, #090914 0%, #11132A 35%, #1A1E46 70%, #2D2C73 100%);
+  background: url("/bg.jpeg") center / cover no-repeat;
   color: #F8FAFF;
   isolation: isolate;
-}
-.reference-card__texture {
-  position: absolute;
-  inset: -8%;
-  z-index: 0;
-  background: repeating-linear-gradient(128deg,transparent 0 5px,rgba(76,132,255,.08) 6px,rgba(9,9,20,.48) 9px,transparent 13px),repeating-linear-gradient(128deg,transparent 0 23px,rgba(76,132,255,.06) 25px,rgba(9,9,20,.34) 30px,transparent 35px);
-  transform: skewX(-4deg) scale(1.12);
-}
-.reference-card__texture:after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(112deg,rgba(9,9,20,.18),rgba(17,19,42,.64) 46%,rgba(26,30,70,.12) 72%,rgba(76,132,255,.28));
-}
-.reference-card__blue-wash {
-  position: absolute;
-  z-index: 0;
-  width: 770px;
-  height: 920px;
-  right: -350px;
-  bottom: -215px;
-  background: radial-gradient(ellipse at center,rgba(107,115,255,.75) 0%,rgba(78,86,214,.45) 45%,rgba(47,51,126,.2) 70%,transparent 85%);
-  filter: blur(34px);
-  transform: rotate(-18deg);
 }
 .reference-card__content {
   position: relative;
@@ -213,6 +189,7 @@
   display: grid;
   grid-template-columns: 313px 293px 1fr;
   overflow: hidden;
+  font-family: var(--font-montserrat), sans-serif;
 }
 .reference-card .card-details > div {
   position: relative;

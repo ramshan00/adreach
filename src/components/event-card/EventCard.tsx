@@ -12,8 +12,6 @@ const displayDesignation = designation?.trim() ? (
 ) : null;
   return (
     <div ref={ref} className="event-card reference-card" data-export-card>
-      <div className="reference-card__texture" />
-      <div className="reference-card__blue-wash" />
       <div className="reference-card__content">
         <div className="attend-pill">EXCITED TO ATTEND</div>
         <section className="card-title">
