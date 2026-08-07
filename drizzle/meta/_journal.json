@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1722902400000,
+      "tag": "0000_create_registrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1722988800000,
+      "tag": "0001_make_email_globally_unique",
+      "breakpoints": true
+    }
+  ]
+}

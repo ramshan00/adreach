@@ -1,36 +1,67 @@
 "use client";
-import { type RefObject, useEffect, useLayoutEffect, useRef, useState } from "react";
+
+import { type RefObject, useLayoutEffect, useRef, useState } from "react";
 import { EventCard } from "@/components/event-card/EventCard";
 
-export function EventCardPreview({ cardRef, ...props }: { cardRef: RefObject<HTMLDivElement | null>; fullName: string; designation?: string; photo?: string }) {
+export function EventCardPreview({
+  cardRef,
+  ...props
+}: {
+  cardRef: RefObject<HTMLDivElement | null>;
+  fullName: string;
+  designation?: string;
+  photo?: string;
+}) {
   const stageRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState<number>(0.3);
 
-  const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
-
-  useIsomorphicLayoutEffect(() => {
+  useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
+
+    let orientationTimer: ReturnType<typeof setTimeout> | undefined;
+    let raf1 = 0;
+    let raf2 = 0;
 
     const updateScale = () => {
       const width = stage.clientWidth;
       if (width > 0) {
-        setScale(width / 1080);
+        setScale(Math.max(width / 1080, 0.01));
       }
     };
 
-    updateScale();
+    const updateAfterLayout = () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(updateScale);
+      });
+    };
 
-    const observer = new ResizeObserver(updateScale);
+    const updateAfterOrientation = () => {
+      updateAfterLayout();
+      clearTimeout(orientationTimer);
+      // iOS Safari reports stale widths until after rotate / toolbar settle.
+      orientationTimer = setTimeout(updateAfterLayout, 250);
+    };
+
+    updateAfterLayout();
+
+    const observer = new ResizeObserver(updateAfterLayout);
     observer.observe(stage);
 
-    window.addEventListener("resize", updateScale);
-    window.addEventListener("orientationchange", updateScale);
+    window.addEventListener("resize", updateAfterLayout);
+    window.addEventListener("orientationchange", updateAfterOrientation);
+    window.visualViewport?.addEventListener("resize", updateAfterLayout);
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("resize", updateScale);
-      window.removeEventListener("orientationchange", updateScale);
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      clearTimeout(orientationTimer);
+      window.removeEventListener("resize", updateAfterLayout);
+      window.removeEventListener("orientationchange", updateAfterOrientation);
+      window.visualViewport?.removeEventListener("resize", updateAfterLayout);
     };
   }, []);
 
@@ -63,4 +94,3 @@ export function EventCardPreview({ cardRef, ...props }: { cardRef: RefObject<HTM
     </div>
   );
 }
-

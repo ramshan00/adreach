@@ -10,6 +10,7 @@ import { DownloadCardButton } from "@/components/event-card/DownloadCardButton";
 import { EventCardPreview } from "@/components/event-card/EventCardPreview";
 import { createCroppedImage, PhotoCropper } from "@/components/event-card/PhotoCropper";
 import { RegistrationSuccess } from "@/components/registration/RegistrationSuccess";
+import { getRegistrationApiUrl } from "@/lib/api-url";
 import { MAX_PHOTO_BYTES, PHOTO_TYPES } from "@/lib/constants";
 import { registrationSchema, type RegistrationInput } from "@/lib/validation";
 
@@ -24,7 +25,7 @@ export function RegistrationForm() {
   function chooseFile(file?: File) { setSaved(false); setMessage(""); setPhotoError(""); if (!file) return; if (!PHOTO_TYPES.includes(file.type)) return setPhotoError("Choose a JPG, PNG, or WebP photograph."); if (file.size > MAX_PHOTO_BYTES) return setPhotoError("Photograph must be 5 MB or smaller."); setSource((current) => { if (current) URL.revokeObjectURL(current); return URL.createObjectURL(file); }); setPhoto(""); }
   async function cropChanged(area: Area) { try { if (source) setPhoto(await createCroppedImage(source, area)); } catch { setPhotoError("This photograph could not be processed."); } }
   function focusStatus() { queueMicrotask(() => document.getElementById("registration-status")?.focus()); }
-  async function submit(data: RegistrationInput) { setMessage(""); setSaved(false); if (!photo) { setPhotoError("Select and crop a photograph before registering."); document.getElementById("photo-upload")?.focus(); return; } setSubmitting(true); try { const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "https://adreach-psi.vercel.app"}/seminar/api/register/`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+  async function submit(data: RegistrationInput) { setMessage(""); setSaved(false); if (!photo) { setPhotoError("Select and crop a photograph before registering."); document.getElementById("photo-upload")?.focus(); return; } setSubmitting(true); try { const res = await fetch(getRegistrationApiUrl(), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
       const result: RegistrationResponse = await res.json(); setMessage(result.message); if (result.fieldErrors) Object.entries(result.fieldErrors).forEach(([field, messages]) => setError(field as keyof RegistrationInput, { message: messages[0] })); setSaved(result.success); focusStatus(); } catch { setMessage("We could not complete your registration. Please try again."); focusStatus(); } finally { setSubmitting(false); } }
   const field = (name: "fullName" | "mobile" | "email" | "designation", label: string, required = false, type = "text", placeholder = "") => <label className="field"><span>{label}{required && <em>*</em>}</span><input type={type} placeholder={placeholder} aria-invalid={!!errors[name]} aria-describedby={`${name}-error`} {...register(name)} />{errors[name] && <small id={`${name}-error`} className="form-error">{errors[name]?.message}</small>}</label>;
   return <div className="registration-grid">

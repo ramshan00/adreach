@@ -21,9 +21,9 @@ const displayDesignation = designation?.trim() ? (
         <p className="card-tagline">LEARN. GROW. CONNECT. SCALE</p>
         <section className="attendee-block">
           <div className="portrait-frame">
-            {/* The source is an ephemeral browser data URL, so Next image optimization cannot be used. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {/* Ephemeral data URLs cannot use next/image optimization. */}
             {photo ? (
+              // eslint-disable-next-line @next/next/no-img-element -- photo is a browser data URL
               <img src={photo} alt="" />
             ) : (
               <div className="portrait-placeholder">

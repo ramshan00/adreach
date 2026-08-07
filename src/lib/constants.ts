@@ -10,5 +10,13 @@ export const EVENT = {
 } as const;
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+/** `/seminar` only for Hostinger static builds; empty for local + Vercel. */
+export const BASE_PATH = process.env.NEXT_STATIC === "true" ? "/seminar" : "";
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+/** Public file path that respects the active basePath. */
+export function publicAsset(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${BASE_PATH}${normalized}`;
+}

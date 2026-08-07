@@ -1,64 +1,72 @@
-import { getDb } from "@/db";
-import { registrations } from "@/db/schema";
-import { EVENT } from "@/lib/constants";
-import { normalizePakistaniMobile } from "@/lib/mobile";
-import { registrationSchema } from "@/lib/validation";
+import { corsHeaders, isRequestOriginAccepted } from "@/lib/cors";
+import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+import { registerAttendee } from "@/lib/register";
 import { NextResponse } from "next/server";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+const MAX_BODY_BYTES = 32 * 1024;
 
-export async function OPTIONS() {
-  return new Response(null, { status: 204, headers: CORS });
+export async function OPTIONS(request: Request) {
+  if (!isRequestOriginAccepted(request)) {
+    return new Response(null, { status: 403 });
+  }
+
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders(request),
+  });
 }
 
-export async function POST(req: Request) {
-  const body = await req.json();
-  const parsed = registrationSchema.safeParse(body);
-  if (!parsed.success) {
+export async function POST(request: Request) {
+  const headers = corsHeaders(request);
+
+  if (!isRequestOriginAccepted(request)) {
     return NextResponse.json(
-      { success: false, message: "Please correct the highlighted fields.", fieldErrors: parsed.error.flatten().fieldErrors },
-      { status: 400, headers: CORS }
+      { success: false, message: "We could not complete your registration. Please try again shortly." },
+      { status: 403 },
     );
   }
-  const mobile = normalizePakistaniMobile(parsed.data.mobile);
-  if (!mobile) {
+
+  const limited = checkRateLimit(clientIp(request));
+  if (!limited.ok) {
     return NextResponse.json(
-      { success: false, message: "Please correct the highlighted fields.", fieldErrors: { mobile: ["Enter a valid Pakistani mobile number."] } },
-      { status: 400, headers: CORS }
+      { success: false, message: "We could not complete your registration. Please try again shortly." },
+      {
+        status: 429,
+        headers: {
+          ...headers,
+          "Retry-After": String(limited.retryAfterSec),
+        },
+      },
     );
   }
+
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    return NextResponse.json(
+      { success: false, message: "Please correct the highlighted fields." },
+      { status: 400, headers },
+    );
+  }
+
+  let body: unknown;
   try {
-    await getDb().insert(registrations).values({
-      eventSlug: EVENT.slug,
-      fullName: parsed.data.fullName,
-      mobile,
-      email: parsed.data.email,
-      designation: parsed.data.designation ?? null,
-      consent: parsed.data.consent,
-      utmSource: parsed.data.utmSource ?? null,
-      utmMedium: parsed.data.utmMedium ?? null,
-      utmCampaign: parsed.data.utmCampaign ?? null,
-    });
-    return NextResponse.json(
-      { success: true, message: "Registration successful. Your personalized image is ready." },
-      { headers: CORS }
-    );
-  } catch (error) {
-    const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
-    const message = error instanceof Error ? error.message : "";
-    if (code === "23505" || message.includes("registrations_email_unique")) {
+    const raw = await request.text();
+    if (raw.length > MAX_BODY_BYTES) {
       return NextResponse.json(
-        { success: false, message: "This email is already registered. No new registration was created." },
-        { status: 409, headers: CORS }
+        { success: false, message: "Please correct the highlighted fields." },
+        { status: 400, headers },
       );
     }
+    body = raw ? JSON.parse(raw) : null;
+  } catch {
     return NextResponse.json(
-      { success: false, message: process.env.DATABASE_URL ? "We could not complete your registration. Please try again shortly." : "Registration is temporarily unavailable. Please contact the event team." },
-      { status: 500, headers: CORS }
+      { success: false, message: "Please correct the highlighted fields." },
+      { status: 400, headers },
     );
   }
+
+  const result = await registerAttendee(body);
+  const { status, ...payload } = result;
+
+  return NextResponse.json(payload, { status, headers });
 }

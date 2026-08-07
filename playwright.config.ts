@@ -19,5 +19,12 @@ export default defineConfig({
     url: "http://127.0.0.1:3100",
     reuseExistingServer: false,
     timeout: 120_000,
+    env: {
+      ...process.env,
+      NEXT_STATIC: "",
+      NEXT_PUBLIC_API_URL: "",
+      NEXT_PUBLIC_SITE_URL: "http://127.0.0.1:3100",
+    },
   },
 });
+

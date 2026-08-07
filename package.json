@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:hostinger": "node scripts/build-hostinger.mjs",
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
@@ -12,7 +13,7 @@
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:migrate": "drizzle-kit push",
+    "db:migrate": "tsx src/db/migrate.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
@@ -20,10 +21,8 @@
     "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "^0.45.2",
     "html-to-image": "^1.11.13",
-    "html2canvas": "^1.4.1",
     "lucide-react": "^1.28.0",
     "next": "16.3.0",
-    "playwright": "^1.62.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-easy-crop": "^6.2.3",
@@ -40,6 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.11",
     "typescript": "^5",
     "vitest": "^4.1.10"
   }

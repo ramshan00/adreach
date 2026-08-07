@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { League_Spartan, Montserrat } from "next/font/google";
 import "./globals.css";
-import { SITE_URL } from "@/lib/constants";
+import { publicAsset, SITE_URL } from "@/lib/constants";
 
 const leagueSpartan = League_Spartan({
   subsets: ["latin"],
@@ -18,7 +18,12 @@ const montserrat = Montserrat({
 });
 
 const description = "Register for the Adreach TikTok Seminar 2026 in Karachi and create your personalized attendee image.";
-export const metadata: Metadata = { metadataBase: new URL(SITE_URL), title: "Adreach TikTok Seminar 2026 | Register Now", description, alternates: { canonical: "/" }, icons: { icon: "/favicon.ico" }, openGraph: { title: "Adreach TikTok Seminar 2026", description, url: "/", siteName: "Adreach", locale: "en_PK", type: "website" }, twitter: { card: "summary_large_image", title: "Adreach TikTok Seminar 2026", description } };
+export const metadata: Metadata = { metadataBase: new URL(SITE_URL), title: "Adreach TikTok Seminar 2026 | Register Now", description, alternates: { canonical: "/" }, icons: { icon: [{ url: "/favicon.png" }, { url: "/favicon.ico" }] }, openGraph: { title: "Adreach TikTok Seminar 2026", description, url: "/", siteName: "Adreach", locale: "en_PK", type: "website" }, twitter: { card: "summary_large_image", title: "Adreach TikTok Seminar 2026", description } };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en" className={`${leagueSpartan.variable} ${montserrat.variable}`}><body>{children}</body></html>;
+  const cardBg = `url("${publicAsset("/bg.jpeg")}")`;
+  return (
+    <html lang="en" className={`${leagueSpartan.variable} ${montserrat.variable}`}>
+      <body style={{ ["--card-bg-image" as string]: cardBg }}>{children}</body>
+    </html>
+  );
 }

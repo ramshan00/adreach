@@ -1,7 +1,3 @@
-export function cn(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ");
-}
-
 export function sanitizeFilename(value: string) {
   return value.trim().toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "attendee";
 }

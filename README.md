@@ -1,50 +1,72 @@
 # Adreach TikTok Seminar 2026
 
-Production-ready event registration landing page and personalized 1080×1080  image generator built with Next.js, Neon PostgreSQL, Drizzle ORM, and browser-only photo cropping.
+Event registration page and personalized 1080×1080 image generator built with Next.js, Neon PostgreSQL, Drizzle ORM, and browser-only photo cropping.
+
+## Dual deployment
+
+| Target | Mode | URL | Registration API |
+| --- | --- | --- | --- |
+| **Local** | `next dev` (server) | `http://localhost:3000/` | same-origin `/api/register/` |
+| **Vercel** | Full Next.js server | `https://adreach-psi.vercel.app/` | same-origin `/api/register/` |
+| **Hostinger** | Static export (`NEXT_STATIC=true`, `basePath=/seminar`) | `https://adreach.agency/seminar/` | `NEXT_PUBLIC_API_URL` + `/api/register/` |
+
+`/seminar` is used **only** for the Hostinger static build. Vercel and local have **no** `basePath`. The API path is always `/api/register/` (never `/seminar/api/register/`).
 
 ## Local setup
 
 1. Install Node.js 20.9 or newer and run `npm install`.
 2. Copy `.env.example` to `.env.local`.
 3. Set `DATABASE_URL` to a Neon pooled PostgreSQL connection string.
-4. Run `npm run db:migrate`, then `npm run dev` and open `http://localhost:3000`.
+4. Leave `NEXT_PUBLIC_API_URL` unset so the form posts to the local API.
+5. Run `npm run db:migrate` (or `npm run db:push` for a quick local sync), then `npm run dev` and open `http://localhost:3000`.
 
-The project can lint, type-check, test, and build without database credentials. Registration requires a configured database at runtime.
-
-## Neon and Drizzle
-
-Create a project at Neon, copy its pooled connection string from the Connect panel, and place it in `DATABASE_URL`. Keep this value server-only.
-
-- `npm run db:generate` creates a migration after schema changes.
-- `npm run db:migrate` applies pending migrations.
-- `npm run db:studio` opens Drizzle Studio.
-
-For production, point your local environment temporarily at the production Neon database and run `npm run db:migrate` once during deployment. Do not generate migrations in production.
-
-## Commands
-
-- `npm run dev` — local development
-- `npm run lint` — ESLint
-- `npm run typecheck` — strict TypeScript check
-- `npm test` — unit tests
-- `npm run test:e2e` — Playwright UI, form, cropper, console, screenshot, and responsive tests
-- `npm run build` / `npm start` — production build and server
+**Security note:** If a real database password was ever committed in `.env.example`, rotate that Neon credential immediately.
 
 ## Environment variables
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | Runtime registration | Neon PostgreSQL pooled connection string |
-| `NEXT_PUBLIC_SITE_URL` | Production | Canonical deployment origin, such as `https://event.example.com` |
+| `DATABASE_URL` | Vercel + local API | Neon PostgreSQL pooled connection string (server-only) |
+| `NEXT_PUBLIC_SITE_URL` | Each build | Canonical site URL for that deploy |
 | `NEXT_PUBLIC_EVENT_SLUG` | Optional | Defaults to `adreach-tiktok-seminar-2026` |
+| `NEXT_PUBLIC_API_URL` | Hostinger static build | API **origin only** (no path), e.g. `https://adreach-psi.vercel.app`. Leave unset on local and Vercel. |
+| `ALLOWED_ORIGINS` | Vercel API | CORS origins only (no paths), e.g. `https://adreach.agency` |
+| `NEXT_STATIC` | Hostinger build only | Set to `true` only via `npm run build:hostinger` |
 
-## Brand assets
+### Hostinger static build env
 
-Add the supplied files at `public/brand/adreach-logo-light.png`, `public/brand/adreach-logo-dark.png`, `public/brand/adreach-icon.png`, `public/reference/seminar-design-reference.jpeg`, and `public/reference/brand-guidelines.pdf`. Missing optional assets do not prevent compilation; the interface includes a text logo fallback.
+```
+NEXT_STATIC=true
+NEXT_PUBLIC_SITE_URL=https://adreach.agency/seminar
+NEXT_PUBLIC_API_URL=https://adreach-psi.vercel.app
+```
 
-## Vercel deployment
+### Vercel server env
 
-Import the repository in Vercel, keep the Next.js defaults, add the environment variables for Production and Preview, deploy, and apply the migration to the same Neon database. Set `NEXT_PUBLIC_SITE_URL` before the final production build so canonical URLs, robots, sitemap, and structured data use the public origin.
+```
+NEXT_PUBLIC_SITE_URL=https://adreach-psi.vercel.app
+DATABASE_URL=...
+ALLOWED_ORIGINS=https://adreach.agency
+```
+
+Do **not** set `NEXT_STATIC=true` or `NEXT_PUBLIC_API_URL` on Vercel (same-origin `/api/register/`).
+
+## Neon and Drizzle
+
+- `npm run db:generate` — create a migration after schema changes.
+- `npm run db:migrate` — apply SQL migrations from `drizzle/` via `src/db/migrate.ts` (safe for fresh DBs; do not invent new schema changes casually against production).
+- `npm run db:push` — push schema directly with Drizzle Kit (convenient for local/dev; avoid careless use on production).
+- `npm run db:studio` — Drizzle Studio.
+
+Do not generate migrations in production. Apply migrations intentionally against the target database.
+
+## Commands
+
+- `npm run dev` — local development (no basePath)
+- `npm run build` — Vercel/server production build
+- `npm run build:hostinger` — static export for Hostinger (`out/`); upload the **contents** of `out/` into Hostinger `/seminar/` (URLs already include the `/seminar` base path)
+- `npm start` — run the server build
+- `npm run lint` / `npm run typecheck` / `npm test` / `npm run test:e2e`
 
 ## Manual test checklist
 
@@ -53,7 +75,5 @@ Import the repository in Vercel, keep the Next.js defaults, add the environment 
 - Upload each supported image type; test 5 MB rejection, crop, zoom, reset, and replace.
 - Confirm network requests and the database contain text fields only—never photograph data.
 - Test live updates, a blank designation, and an 80-character name.
-- Download and inspect an opaque 1080×1080 PNG; test native file sharing on a supported mobile device.
-- Check keyboard navigation, validation announcements, reduced motion, and widths from 360px to 1440px.
-- Check the console for runtime, hydration, and image errors after final brand assets are installed.
-"# addreach" 
+- Download and inspect an opaque 1080×1080 PNG.
+- Check keyboard navigation, validation announcements, and widths from 360px to 1440px.

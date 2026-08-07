@@ -1,9 +1,14 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/constants";
 
 export const dynamic = "force-static";
 
+function siteBase(): string {
+  return SITE_URL.replace(/\/+$/, "");
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://adreach.agency/seminar";
+  const baseUrl = siteBase();
 
   return [
     {
