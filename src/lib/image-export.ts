@@ -1,5 +1,7 @@
-import { toPng } from "html-to-image";
+import { toCanvas } from "html-to-image";
 import { publicAsset } from "./constants";
+
+const CARD_SIZE = 1080;
 
 function waitForLoadOrError(image: HTMLImageElement): Promise<void> {
   return new Promise((resolve) => {
@@ -24,8 +26,6 @@ async function ensureImageDecoded(image: HTMLImageElement): Promise<void> {
     }
   }
 
-  // Only wait for events if the browser has not finished the network/data load.
-  // Do not treat `complete` as "decoded for export"; we still call decode() below.
   if (!image.complete) {
     await waitForLoadOrError(image);
   }
@@ -77,6 +77,142 @@ function resolveCardBackground(source: HTMLElement): string {
   return absolutePublicUrl(publicAsset("/bg.jpeg"));
 }
 
+function isExportDebugEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("exportDebug") === "1";
+}
+
+function imgDebugInfo(label: string, image: HTMLImageElement | null) {
+  if (!image) {
+    return { label, present: false };
+  }
+  const src = image.currentSrc || image.src || "";
+  return {
+    label,
+    present: true,
+    isDataUrl: src.startsWith("data:"),
+    srcPrefix: src.slice(0, 32),
+    srcLength: src.length,
+    complete: image.complete,
+    naturalWidth: image.naturalWidth,
+    naturalHeight: image.naturalHeight,
+  };
+}
+
+function findPortraitImage(card: HTMLElement): HTMLImageElement | null {
+  return card.querySelector<HTMLImageElement>(".portrait-frame img");
+}
+
+type PortraitBox = { x: number; y: number; width: number; height: number };
+
+function getPortraitBox(card: HTMLElement, portrait: HTMLImageElement): PortraitBox {
+  const cardRect = card.getBoundingClientRect();
+  const photoRect = portrait.getBoundingClientRect();
+  const scaleX = CARD_SIZE / Math.max(cardRect.width, 1);
+  const scaleY = CARD_SIZE / Math.max(cardRect.height, 1);
+  return {
+    x: (photoRect.left - cardRect.left) * scaleX,
+    y: (photoRect.top - cardRect.top) * scaleY,
+    width: photoRect.width * scaleX,
+    height: photoRect.height * scaleY,
+  };
+}
+
+/** CSS object-fit: cover source crop for drawImage. */
+function objectFitCoverSource(
+  image: HTMLImageElement,
+  destWidth: number,
+  destHeight: number,
+): { sx: number; sy: number; sw: number; sh: number } {
+  const iw = image.naturalWidth || image.width;
+  const ih = image.naturalHeight || image.height;
+  if (!iw || !ih || !destWidth || !destHeight) {
+    return { sx: 0, sy: 0, sw: iw || 1, sh: ih || 1 };
+  }
+  const scale = Math.max(destWidth / iw, destHeight / ih);
+  const sw = destWidth / scale;
+  const sh = destHeight / scale;
+  const sx = (iw - sw) / 2;
+  const sy = (ih - sh) / 2;
+  return { sx, sy, sw, sh };
+}
+
+function drawPortraitCover(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  box: PortraitBox,
+) {
+  const { sx, sy, sw, sh } = objectFitCoverSource(image, box.width, box.height);
+  ctx.save();
+  ctx.beginPath();
+  // Match rounded portrait frame roughly; clip to box (border-radius is visual; overflow hidden on frame).
+  const radius = Math.min(44, box.width / 2, box.height / 2);
+  const { x, y, width, height } = box;
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, radius);
+  ctx.arcTo(x + width, y + height, x, y + height, radius);
+  ctx.arcTo(x, y + height, x, y, radius);
+  ctx.arcTo(x, y, x + width, y, radius);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(image, sx, sy, sw, sh, x, y, width, height);
+  ctx.restore();
+}
+
+async function samplePortraitPresence(
+  pngDataUrl: string,
+  box: PortraitBox,
+): Promise<{ portraitLikelyPresent: boolean; differingSamples: number; samples: number }> {
+  const image = new Image();
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("Failed to load export PNG for debug sampling."));
+    image.src = pngDataUrl;
+  });
+  if (typeof image.decode === "function") {
+    try {
+      await image.decode();
+    } catch {
+      // continue with loaded bitmap
+    }
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = CARD_SIZE;
+  canvas.height = CARD_SIZE;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return { portraitLikelyPresent: false, differingSamples: 0, samples: 0 };
+
+  ctx.drawImage(image, 0, 0);
+  const inset = 8;
+  const x0 = Math.max(0, Math.floor(box.x + inset));
+  const y0 = Math.max(0, Math.floor(box.y + inset));
+  const x1 = Math.min(CARD_SIZE - 1, Math.floor(box.x + box.width - inset));
+  const y1 = Math.min(CARD_SIZE - 1, Math.floor(box.y + box.height - inset));
+  const points = [
+    [x0, y0],
+    [x1, y0],
+    [x0, y1],
+    [x1, y1],
+    [Math.floor((x0 + x1) / 2), Math.floor((y0 + y1) / 2)],
+  ] as const;
+
+  // Empty/placeholder slot is typically dark navy; photo pixels usually deviate.
+  let differing = 0;
+  for (const [px, py] of points) {
+    const [r = 0, g = 0, b = 0] = ctx.getImageData(px, py, 1, 1).data;
+    const isNearNavy = r < 50 && g < 55 && b < 90;
+    const isNearBlack = r + g + b < 40;
+    if (!isNearNavy && !isNearBlack) differing += 1;
+  }
+
+  return {
+    portraitLikelyPresent: differing >= 2,
+    differingSamples: differing,
+    samples: points.length,
+  };
+}
+
 function prepareExportClone(source: HTMLElement): { host: HTMLDivElement; clone: HTMLElement } {
   const host = document.createElement("div");
   host.setAttribute("aria-hidden", "true");
@@ -84,8 +220,8 @@ function prepareExportClone(source: HTMLElement): { host: HTMLDivElement; clone:
     position: "fixed",
     left: "-10000px",
     top: "0",
-    width: "1080px",
-    height: "1080px",
+    width: `${CARD_SIZE}px`,
+    height: `${CARD_SIZE}px`,
     overflow: "visible",
     transform: "none",
     pointerEvents: "none",
@@ -94,8 +230,8 @@ function prepareExportClone(source: HTMLElement): { host: HTMLDivElement; clone:
 
   const clone = source.cloneNode(true) as HTMLElement;
   clone.style.transform = "none";
-  clone.style.width = "1080px";
-  clone.style.height = "1080px";
+  clone.style.width = `${CARD_SIZE}px`;
+  clone.style.height = `${CARD_SIZE}px`;
   clone.style.margin = "0";
   clone.style.left = "0";
   clone.style.top = "0";
@@ -110,30 +246,72 @@ function prepareExportClone(source: HTMLElement): { host: HTMLDivElement; clone:
   return { host, clone };
 }
 
+const captureOptions = {
+  width: CARD_SIZE,
+  height: CARD_SIZE,
+  canvasWidth: CARD_SIZE,
+  canvasHeight: CARD_SIZE,
+  pixelRatio: 1,
+  cacheBust: true,
+  backgroundColor: "#090914",
+  style: {
+    transform: "none",
+    width: `${CARD_SIZE}px`,
+    height: `${CARD_SIZE}px`,
+    margin: "0",
+    left: "0",
+    top: "0",
+  },
+} as const;
+
 export async function cardToFile(node: HTMLElement, filename: string) {
+  const debug = isExportDebugEnabled();
   const { host, clone } = prepareExportClone(node);
+  const livePortrait = findPortraitImage(node);
+  const clonePortrait = findPortraitImage(clone);
 
   try {
     await document.fonts.ready;
     await waitForImages(clone);
 
-    const dataUrl = await toPng(clone, {
-      width: 1080,
-      height: 1080,
-      canvasWidth: 1080,
-      canvasHeight: 1080,
-      pixelRatio: 1,
-      cacheBust: true,
-      backgroundColor: "#090914",
-      style: {
-        transform: "none",
-        width: "1080px",
-        height: "1080px",
-        margin: "0",
-        left: "0",
-        top: "0",
-      },
-    });
+    if (debug) {
+      console.info("[exportDebug] live portrait", imgDebugInfo("live", livePortrait));
+      console.info("[exportDebug] clone portrait before capture", imgDebugInfo("clone", clonePortrait));
+    }
+
+    let portraitBox: PortraitBox | null = null;
+    let portraitSource: HTMLImageElement | null = null;
+
+    if (clonePortrait && clonePortrait.naturalWidth > 0) {
+      portraitBox = getPortraitBox(clone, clonePortrait);
+      // Keep a decoded source for compositing after foreignObject capture.
+      portraitSource = new Image();
+      portraitSource.src = clonePortrait.currentSrc || clonePortrait.src;
+      await ensureImageDecoded(portraitSource);
+      clonePortrait.style.visibility = "hidden";
+    }
+
+    const canvas = await toCanvas(clone, captureOptions);
+
+    if (portraitSource && portraitBox && portraitBox.width > 0 && portraitBox.height > 0) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        drawPortraitCover(ctx, portraitSource, portraitBox);
+      }
+    }
+
+    const dataUrl = canvas.toDataURL("image/png");
+
+    if (debug && portraitBox) {
+      const withoutCompositeNote = !portraitSource;
+      const sample = await samplePortraitPresence(dataUrl, portraitBox);
+      console.info("[exportDebug] png portrait sample", {
+        ...sample,
+        portraitBox,
+        composited: Boolean(portraitSource),
+        withoutCompositeNote,
+      });
+    }
 
     const blob = dataUrlToBlob(dataUrl);
     return new File([blob], filename, { type: "image/png" });
