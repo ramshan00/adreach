@@ -105,9 +105,17 @@ function findPortraitImage(card: HTMLElement): HTMLImageElement | null {
 
 type PortraitBox = { x: number; y: number; width: number; height: number };
 
-function getPortraitBox(card: HTMLElement, portrait: HTMLImageElement): PortraitBox {
+/** Matches .reference-card layout when getBoundingClientRect is unreliable (offscreen / iOS Chrome). */
+const FALLBACK_PORTRAIT_BOX: PortraitBox = {
+  x: 110,
+  y: 442,
+  width: 330,
+  height: 352,
+};
+
+function getPortraitBox(card: HTMLElement, target: Element): PortraitBox {
   const cardRect = card.getBoundingClientRect();
-  const photoRect = portrait.getBoundingClientRect();
+  const photoRect = target.getBoundingClientRect();
   const scaleX = CARD_SIZE / Math.max(cardRect.width, 1);
   const scaleY = CARD_SIZE / Math.max(cardRect.height, 1);
   return {
@@ -116,6 +124,49 @@ function getPortraitBox(card: HTMLElement, portrait: HTMLImageElement): Portrait
     width: photoRect.width * scaleX,
     height: photoRect.height * scaleY,
   };
+}
+
+function isUsableBox(box: PortraitBox): boolean {
+  return box.width > 1 && box.height > 1 && Number.isFinite(box.x) && Number.isFinite(box.y);
+}
+
+/** Prefer visible live card geometry; fall back to clone, then CSS constants. */
+function resolvePortraitBox(
+  liveCard: HTMLElement,
+  cloneCard: HTMLElement,
+  livePortrait: HTMLImageElement | null,
+  clonePortrait: HTMLImageElement | null,
+): PortraitBox {
+  const liveFrame = liveCard.querySelector(".portrait-frame");
+  if (liveFrame) {
+    const box = getPortraitBox(liveCard, liveFrame);
+    if (isUsableBox(box)) return box;
+  }
+  if (livePortrait) {
+    const box = getPortraitBox(liveCard, livePortrait);
+    if (isUsableBox(box)) return box;
+  }
+
+  const cloneFrame = cloneCard.querySelector(".portrait-frame");
+  if (cloneFrame) {
+    const box = getPortraitBox(cloneCard, cloneFrame);
+    if (isUsableBox(box)) return box;
+  }
+  if (clonePortrait) {
+    const box = getPortraitBox(cloneCard, clonePortrait);
+    if (isUsableBox(box)) return box;
+  }
+
+  return FALLBACK_PORTRAIT_BOX;
+}
+
+async function loadPortraitBitmap(src: string): Promise<HTMLImageElement | null> {
+  if (!src) return null;
+  const image = new Image();
+  image.src = src;
+  await ensureImageDecoded(image);
+  if (image.naturalWidth <= 0 || image.naturalHeight <= 0) return null;
+  return image;
 }
 
 /** CSS object-fit: cover source crop for drawImage. */
@@ -218,11 +269,12 @@ function prepareExportClone(source: HTMLElement): { host: HTMLDivElement; clone:
   host.setAttribute("aria-hidden", "true");
   Object.assign(host.style, {
     position: "fixed",
-    left: "-10000px",
+    left: "0",
     top: "0",
     width: `${CARD_SIZE}px`,
     height: `${CARD_SIZE}px`,
-    overflow: "visible",
+    overflow: "hidden",
+    opacity: "0",
     transform: "none",
     pointerEvents: "none",
     zIndex: "-1",
@@ -273,43 +325,53 @@ export async function cardToFile(node: HTMLElement, filename: string) {
   try {
     await document.fonts.ready;
     await waitForImages(clone);
+    if (livePortrait) await ensureImageDecoded(livePortrait);
+
+    const photoSrc =
+      (livePortrait?.currentSrc || livePortrait?.src || "").trim() ||
+      (clonePortrait?.currentSrc || clonePortrait?.src || "").trim();
+
+    const portraitBox = photoSrc
+      ? resolvePortraitBox(node, clone, livePortrait, clonePortrait)
+      : null;
+
+    const portraitSource = photoSrc ? await loadPortraitBitmap(photoSrc) : null;
 
     if (debug) {
       console.info("[exportDebug] live portrait", imgDebugInfo("live", livePortrait));
       console.info("[exportDebug] clone portrait before capture", imgDebugInfo("clone", clonePortrait));
+      console.info("[exportDebug] composite plan", {
+        hasPhotoSrc: Boolean(photoSrc),
+        srcIsDataUrl: photoSrc.startsWith("data:"),
+        portraitLoaded: Boolean(portraitSource),
+        portraitBox,
+      });
     }
 
-    let portraitBox: PortraitBox | null = null;
-    let portraitSource: HTMLImageElement | null = null;
-
-    if (clonePortrait && clonePortrait.naturalWidth > 0) {
-      portraitBox = getPortraitBox(clone, clonePortrait);
-      // Keep a decoded source for compositing after foreignObject capture.
-      portraitSource = new Image();
-      portraitSource.src = clonePortrait.currentSrc || clonePortrait.src;
-      await ensureImageDecoded(portraitSource);
+    // Hide clone img so foreignObject cannot paint a blank/broken portrait; we draw after capture.
+    if (clonePortrait && portraitSource) {
       clonePortrait.style.visibility = "hidden";
     }
 
     const canvas = await toCanvas(clone, captureOptions);
 
-    if (portraitSource && portraitBox && portraitBox.width > 0 && portraitBox.height > 0) {
+    let composited = false;
+    if (portraitSource && portraitBox && isUsableBox(portraitBox)) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
         drawPortraitCover(ctx, portraitSource, portraitBox);
+        composited = true;
       }
     }
 
     const dataUrl = canvas.toDataURL("image/png");
 
     if (debug && portraitBox) {
-      const withoutCompositeNote = !portraitSource;
       const sample = await samplePortraitPresence(dataUrl, portraitBox);
       console.info("[exportDebug] png portrait sample", {
         ...sample,
         portraitBox,
-        composited: Boolean(portraitSource),
-        withoutCompositeNote,
+        composited,
       });
     }
 
