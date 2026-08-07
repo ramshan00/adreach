@@ -1,18 +1,47 @@
 import { toPng } from "html-to-image";
 import { publicAsset } from "./constants";
 
+function waitForLoadOrError(image: HTMLImageElement): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      image.removeEventListener("load", done);
+      image.removeEventListener("error", done);
+      resolve();
+    };
+    image.addEventListener("load", done);
+    image.addEventListener("error", done);
+  });
+}
+
+/** Wait until each <img> is decoded/paint-ready. Do not trust img.complete alone (iOS Safari clones). */
+async function ensureImageDecoded(image: HTMLImageElement): Promise<void> {
+  if (typeof image.decode === "function") {
+    try {
+      await image.decode();
+      return;
+    } catch {
+      // Still loading or not paint-ready yet — fall through.
+    }
+  }
+
+  // Only wait for events if the browser has not finished the network/data load.
+  // Do not treat `complete` as "decoded for export"; we still call decode() below.
+  if (!image.complete) {
+    await waitForLoadOrError(image);
+  }
+
+  if (typeof image.decode === "function") {
+    try {
+      await image.decode();
+    } catch {
+      // Broken image: do not hang export.
+    }
+  }
+}
+
 async function waitForImages(node: HTMLElement) {
   const images = Array.from(node.querySelectorAll("img"));
-  await Promise.all(
-    images.map((image) =>
-      image.complete
-        ? Promise.resolve()
-        : new Promise<void>((resolve) => {
-            image.onload = () => resolve();
-            image.onerror = () => resolve();
-          }),
-    ),
-  );
+  await Promise.all(images.map((image) => ensureImageDecoded(image)));
 }
 
 /** Convert a data URL to a Blob without fetch (more reliable on iOS Safari). */
